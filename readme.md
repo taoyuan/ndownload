@@ -1,4 +1,4 @@
-# download [![Build Status](https://travis-ci.org/kevva/download.svg?branch=master)](https://travis-ci.org/kevva/download)
+# ndownload [![Build Status](https://travis-ci.org/taoyuan/ndownload.svg?branch=master)](https://travis-ci.org/taoyuan/ndownload)
 
 > Download and extract files
 
@@ -16,20 +16,20 @@ $ npm install --save download
 
 ```js
 const fs = require('fs');
-const download = require('download');
+const download = require('ndownload');
 
 download('http://unicorn.com/foo.jpg', 'dist').then(() => {
-	console.log('done!');
+  console.log('done!');
 });
 
 download('http://unicorn.com/foo.jpg').then(data => {
-	fs.writeFileSync('dist/foo.jpg', data);
+  fs.writeFileSync('dist/foo.jpg', data);
 });
 
 download('unicorn.com/foo.jpg').pipe(fs.createWriteStream('dist/foo.jpg'));
 
 Promise.all(['unicorn.com/foo.jpg', 'cats.com/dancing.gif'].map(x => download(x, 'dist'))).then(() => {
-	console.log('files downloaded!');
+  console.log('files downloaded!');
 });
 ```
 
@@ -61,9 +61,11 @@ Same options as [got](https://github.com/sindresorhus/got) in addition to the on
 Type: `boolean`<br>
 Default: `false`
 
-If set to `true`, try extracting the file using [decompress](https://github.com/kevva/decompress/).
+If set to `true`, try extracting the file using [decompress](https://github.com/taoyuan/decompress/).
 
+## Credit
+* [Kevin Mårtensson](https://github.com/kevva)
 
 ## License
 
-MIT © [Kevin Mårtensson](http://github.com/kevva)
+MIT © [Yuan Tao](http://github.com/taoyuan)
