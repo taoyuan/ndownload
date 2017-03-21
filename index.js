@@ -9,6 +9,8 @@ const getStream = require('get-stream');
 const got = require('got');
 const mkdirp = require('mkdirp');
 const pify = require('pify');
+const PromiseA = require('bluebird');
+const disposition = require('content-disposition');
 
 const fsP = pify(fs);
 
@@ -53,11 +55,33 @@ module.exports = (uri, output, opts) => {
 
 	const agent = caw(opts.proxy, {protocol});
 	const stream = got.stream(uri, Object.assign(opts, {agent}));
-	const dest = output ? path.join(output, filenamify(path.basename(uri))) : null;
-	const promise = createPromise(uri, dest, stream, opts);
 
-	stream.then = promise.then.bind(promise);
-	stream.catch = promise.catch.bind(promise);
+	output = output || opts.output || opts.directory || opts.dir;
+	const filename = opts.filename;
+
+	const promise = new PromiseA((resolve, reject) => {
+		if (filename) return resolve(filename);
+
+		stream.once('response', res => {
+			stream.removeListener('error', reject);
+			const header = res.headers['Content-Disposition'] || res.headers['content-disposition'];
+			return resolve(header && disposition.parse(header).parameters.filename);
+		});
+
+		stream.once('error', reject);
+
+	}).then(filename => {
+		filename = filename || filenamify(path.basename(uri));
+		return output ? path.join(output, filename) : null;
+	}).then(file => createPromise(uri, file, stream, opts));
+
+	stream.then = function () {
+		return promise.then(...arguments);
+	};
+
+	stream.catch = function () {
+		return promise.catch(...arguments);
+	};
 
 	return stream;
 };
