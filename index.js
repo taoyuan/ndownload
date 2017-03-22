@@ -32,7 +32,7 @@ const createPromise = (uri, output, stream, opts) => {
 
 		return pify(mkdirp)(path.dirname(output))
 			.then(() => fsP.writeFile(output, data))
-			.then(() => data);
+			.then(() => ({output, data}));
 	});
 };
 
