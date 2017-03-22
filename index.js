@@ -11,6 +11,7 @@ const mkdirp = require('mkdirp');
 const pify = require('pify');
 const PromiseA = require('bluebird');
 const disposition = require('content-disposition');
+const urldecode = require('urldecode');
 
 const fsP = pify(fs);
 
@@ -64,8 +65,11 @@ module.exports = (uri, output, opts) => {
 
 		stream.once('response', res => {
 			stream.removeListener('error', reject);
+			let filename;
 			const header = res.headers['Content-Disposition'] || res.headers['content-disposition'];
-			return resolve(header && disposition.parse(header).parameters.filename);
+			if (header) filename = disposition.parse(header).parameters.filename;
+			if (filename) filename = urldecode(filename);
+			return resolve(filename);
 		});
 
 		stream.once('error', reject);
