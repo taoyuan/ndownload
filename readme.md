@@ -22,7 +22,7 @@ download('http://unicorn.com/foo.jpg', 'dist').then(() => {
 	console.log('done!');
 });
 
-download('http://unicorn.com/foo.jpg').then(data => {
+download('http://unicorn.com/foo.jpg').then(({output, data}) => {
 	fs.writeFileSync('dist/foo.jpg', data);
 });
 
