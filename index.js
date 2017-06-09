@@ -3,38 +3,30 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 const caw = require('caw');
+const contentDisposition = require('content-disposition');
 const decompress = require('decompress');
 const filenamify = require('filenamify');
 const getStream = require('get-stream');
 const got = require('got');
-const mkdirp = require('mkdirp');
+const makeDir = require('make-dir');
 const pify = require('pify');
-const PromiseA = require('bluebird');
-const disposition = require('content-disposition');
-const urldecode = require('urldecode');
+const pEvent = require('p-event');
 
 const fsP = pify(fs);
+const filenameFromPath = res => path.basename(url.parse(res.requestUrl).pathname);
 
-const createPromise = (uri, output, stream, opts) => {
-	const response = opts.encoding === null ? getStream.buffer(stream) : getStream(stream, opts);
+const getFilename = res => {
+	const header = res.headers['content-disposition'];
 
-	return response.then(data => {
-		if (!output && opts.extract) {
-			return decompress(data, opts);
+	if (header) {
+		const parsed = contentDisposition.parse(header);
+
+		if (parsed.parameters && parsed.parameters.filename) {
+			return parsed.parameters.filename;
 		}
+	}
 
-		if (!output) {
-			return data;
-		}
-
-		if (opts.extract) {
-			return decompress(data, path.dirname(output), opts);
-		}
-
-		return pify(mkdirp)(path.dirname(output))
-			.then(() => fsP.writeFile(output, data))
-			.then(() => ({output, data}));
-	});
+	return filenameFromPath(res);
 };
 
 module.exports = (uri, output, opts) => {
@@ -57,35 +49,32 @@ module.exports = (uri, output, opts) => {
 	const agent = caw(opts.proxy, {protocol});
 	const stream = got.stream(uri, Object.assign(opts, {agent}));
 
-	output = output || opts.output || opts.directory || opts.dir;
-	const filename = opts.filename;
+	const promise = pEvent(stream, 'response').then(res => {
+		const encoding = opts.encoding === null ? 'buffer' : opts.encoding;
+		return Promise.all([getStream(stream, {encoding}), res]);
+	}).then(result => {
+		// TODO: Use destructuring when targeting Node.js 6
+		const data = result[0];
+		const res = result[1];
 
-	const promise = new PromiseA((resolve, reject) => {
-		if (filename) return resolve(filename);
+		if (!output) {
+			return opts.extract ? decompress(data, opts) : data;
+		}
 
-		stream.once('response', res => {
-			stream.removeListener('error', reject);
-			let filename;
-			const header = res.headers['Content-Disposition'] || res.headers['content-disposition'];
-			if (header) filename = disposition.parse(header).parameters.filename;
-			if (filename) filename = urldecode(filename);
-			return resolve(filename);
-		});
+		const filename = opts.filename || filenamify(getFilename(res));
+		const outputFilepath = path.join(output, filename);
 
-		stream.once('error', reject);
+		if (opts.extract) {
+			return decompress(data, path.dirname(outputFilepath), opts);
+		}
 
-	}).then(filename => {
-		filename = filename || filenamify(path.basename(uri));
-		return output ? path.join(output, filename) : null;
-	}).then(file => createPromise(uri, file, stream, opts));
+		return makeDir(path.dirname(outputFilepath))
+			.then(() => fsP.writeFile(outputFilepath, data))
+			.then(() => data);
+	});
 
-	stream.then = function () {
-		return promise.then(...arguments);
-	};
-
-	stream.catch = function () {
-		return promise.catch(...arguments);
-	};
+	stream.then = promise.then.bind(promise);
+	stream.catch = promise.catch.bind(promise);
 
 	return stream;
 };

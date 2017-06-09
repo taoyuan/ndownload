@@ -1,13 +1,13 @@
 {
-  "name": "ndownload",
-  "version": "5.2.1",
+  "name": "download",
+  "version": "6.2.2",
   "description": "Download and extract files",
   "license": "MIT",
-  "repository": "taoyuan/ndownload",
+  "repository": "kevva/download",
   "author": {
-    "email": "towyuan@outlook.com",
-    "name": "Yuan Tao",
-    "url": "github.com/taoyuan"
+    "email": "kevinmartensson@gmail.com",
+    "name": "Kevin Mårtensson",
+    "url": "github.com/kevva"
   },
   "engines": {
     "node": ">=4"
@@ -26,27 +26,23 @@
     "url"
   ],
   "dependencies": {
-    "bluebird": "^3.5.0",
     "caw": "^2.0.0",
     "content-disposition": "^0.5.2",
     "decompress": "^4.0.0",
     "filenamify": "^2.0.0",
     "get-stream": "^3.0.0",
-    "got": "^6.7.1",
-    "mkdirp": "^0.5.1",
-    "pify": "^2.3.0",
-    "urldecode": "^1.0.1"
+    "got": "^7.0.0",
+    "make-dir": "^1.0.0",
+    "p-event": "^1.0.0",
+    "pify": "^3.0.0"
   },
   "devDependencies": {
     "ava": "*",
     "is-zip": "^1.0.0",
-    "nock": "^9.0.9",
+    "nock": "^9.0.2",
     "path-exists": "^3.0.0",
     "random-buffer": "^0.1.0",
-    "rimraf": "^2.6.1",
+    "rimraf": "^2.2.8",
     "xo": "*"
-  },
-  "xo": {
-    "esnext": true
   }
 }
